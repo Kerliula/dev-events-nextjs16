@@ -2,10 +2,14 @@ import ExploreBtn from "@/components/ui/ExploreBtn";
 import EventCard from "@/components/ui/EventCard";
 import { IEvent } from "@/database";
 import { getBaseUrl } from "@/lib/utils";
+import { cacheLife } from "next/cache";
 
 const BASE_URL = getBaseUrl();
 
 const Home = async () => {
+  "use cache";
+  cacheLife('hours');
+
   const response = await fetch(`${BASE_URL}/api/events`, { cache: "no-store" });
   
   if (!response.ok) {
