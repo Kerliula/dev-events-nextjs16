@@ -1,6 +1,6 @@
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import { writeFile, mkdir } from "fs/promises";
+import { join } from "path";
+import { existsSync } from "fs";
 
 export interface UploadOptions {
   directory?: string;
@@ -15,8 +15,8 @@ export interface UploadResult {
 }
 
 const DEFAULT_OPTIONS: UploadOptions = {
-  directory: 'events',
-  allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+  directory: "events",
+  allowedTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"],
   maxSizeInMB: 5,
 };
 
@@ -34,14 +34,14 @@ export async function uploadImage(
 
   // Validate file exists
   if (!file || !file.size) {
-    return { success: false, error: 'No file provided' };
+    return { success: false, error: "No file provided" };
   }
 
   // Validate file type
   if (config.allowedTypes && !config.allowedTypes.includes(file.type)) {
     return {
       success: false,
-      error: `Invalid file type. Allowed: ${config.allowedTypes.join(', ')}`,
+      error: `Invalid file type. Allowed: ${config.allowedTypes.join(", ")}`,
     };
   }
 
@@ -57,11 +57,18 @@ export async function uploadImage(
   try {
     // Generate unique filename
     const timestamp = Date.now();
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '-').toLowerCase();
+    const sanitizedName = file.name
+      .replace(/[^a-zA-Z0-9.-]/g, "-")
+      .toLowerCase();
     const filename = `${timestamp}-${sanitizedName}`;
 
     // Prepare upload directory
-    const uploadDir = join(process.cwd(), 'public', 'images', config.directory!);
+    const uploadDir = join(
+      process.cwd(),
+      "public",
+      "images",
+      config.directory!
+    );
     if (!existsSync(uploadDir)) {
       await mkdir(uploadDir, { recursive: true });
     }
@@ -77,7 +84,7 @@ export async function uploadImage(
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Upload failed',
+      error: error instanceof Error ? error.message : "Upload failed",
     };
   }
 }
@@ -91,22 +98,22 @@ export async function parseEventFormData(formData: FormData): Promise<{
   data?: Record<string, any>;
   error?: string;
 }> {
-  const eventData: Record<string, any> = {};
+  let eventData: Record<string, any> = {};
 
   try {
     for (const [key, value] of formData.entries()) {
       // Handle image upload
-      if (key === 'image' && value instanceof File) {
+      if (key === "image" && value instanceof File) {
         const result = await uploadImage(value);
-        
+
         if (!result.success) {
           return { error: result.error };
         }
-        
+
         eventData[key] = result.path;
       }
       // Handle array fields
-      else if (key === 'agenda' || key === 'tags') {
+      else if (key === "agenda" || key === "tags") {
         const existing = eventData[key];
         eventData[key] = existing
           ? Array.isArray(existing)
@@ -120,10 +127,16 @@ export async function parseEventFormData(formData: FormData): Promise<{
       }
     }
 
+    let tags = JSON.parse(eventData["tags"] || "[]");
+    let agenda = JSON.parse(eventData["agenda"] || "[]");
+
+    eventData = { ...eventData, tags: tags, agenda: agenda };
+
     return { data: eventData };
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : 'Failed to parse form data',
+      error:
+        error instanceof Error ? error.message : "Failed to parse form data",
     };
   }
 }

@@ -16,8 +16,8 @@ const EventCard = ({ title, image, slug, location, date, time }: Props) => {
       <Image
         src={image}
         alt={title}
-        height={410}
-        width={300}
+        height={420}
+        width={500}
         className="poster"
       />
 
