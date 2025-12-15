@@ -1,9 +1,12 @@
 import ExploreBtn from "@/components/ui/ExploreBtn";
 import EventCard from "@/components/ui/EventCard";
-import { events } from "@/lib/constants";
+import { IEvent } from "@/database";
 
-const Home = () => {
-  console.log("I am server component");
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+
+const Home = async () => {
+  const response = await fetch(`${BASE_URL}/api/events`, { cache: "no-store" });
+  const { events } = await response.json();
 
   return (
     <section>
@@ -20,11 +23,13 @@ const Home = () => {
         <h3>Featured Events</h3>
 
         <ul className="events">
-          {events.map((event) => (
-            <li key={event.title} style={{ listStyle: "none" }}>
-              <EventCard {...event} />
-            </li>
-          ))}
+          {events &&
+            events.length > 0 &&
+            events.map((event: IEvent) => (
+              <li key={event.title} style={{ listStyle: "none" }}>
+                <EventCard {...event} />
+              </li>
+            ))}
         </ul>
       </div>
     </section>
