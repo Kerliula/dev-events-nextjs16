@@ -19,7 +19,82 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const createdEvent = await Event.create(eventData);
+    // Sanitize input: only allow specific fields, prevent mass-assignment
+    const allowedFields = [
+      'title',
+      'description',
+      'overview',
+      'image',
+      'venue',
+      'location',
+      'date',
+      'time',
+      'mode',
+      'audience',
+      'agenda',
+      'organizer',
+      'tags',
+    ];
+
+    const sanitizedData: Record<string, any> = {};
+
+    for (const field of allowedFields) {
+      if (eventData[field] !== undefined) {
+        sanitizedData[field] = eventData[field];
+      }
+    }
+
+    // Validate required fields
+    const requiredFields = [
+      'title',
+      'description',
+      'overview',
+      'image',
+      'venue',
+      'location',
+      'date',
+      'time',
+      'mode',
+      'audience',
+      'agenda',
+      'organizer',
+      'tags',
+    ];
+
+    const missingFields = requiredFields.filter(field => !sanitizedData[field]);
+    if (missingFields.length > 0) {
+      return NextResponse.json(
+        { message: `Missing required fields: ${missingFields.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    // Validate mode enum
+    if (!['online', 'offline', 'hybrid'].includes(sanitizedData.mode)) {
+      return NextResponse.json(
+        { message: 'Mode must be online, offline, or hybrid' },
+        { status: 400 }
+      );
+    }
+
+    // Validate arrays
+    if (!Array.isArray(sanitizedData.agenda) || sanitizedData.agenda.length === 0) {
+      return NextResponse.json(
+        { message: 'Agenda must be a non-empty array' },
+        { status: 400 }
+      );
+    }
+
+    if (!Array.isArray(sanitizedData.tags) || sanitizedData.tags.length === 0) {
+      return NextResponse.json(
+        { message: 'Tags must be a non-empty array' },
+        { status: 400 }
+      );
+    }
+
+    // Explicitly exclude protected fields (slug, createdAt, updatedAt auto-generated)
+    // Do not allow _id, slug, createdAt, updatedAt from client
+    const createdEvent = await Event.create(sanitizedData);
 
     return NextResponse.json(
       {
@@ -30,6 +105,19 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error(error);
+
+    // Handle Mongoose validation errors with 400 status
+    if (error instanceof Error && error.name === 'ValidationError') {
+      return NextResponse.json(
+        {
+          message: "Validation failed",
+          error: error.message,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Handle other errors with 500 status
     return NextResponse.json(
       {
         message: "Event creation failed",
