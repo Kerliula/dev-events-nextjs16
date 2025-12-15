@@ -1,11 +1,17 @@
 import ExploreBtn from "@/components/ui/ExploreBtn";
 import EventCard from "@/components/ui/EventCard";
 import { IEvent } from "@/database";
+import { getBaseUrl } from "@/lib/utils";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const BASE_URL = getBaseUrl();
 
 const Home = async () => {
   const response = await fetch(`${BASE_URL}/api/events`, { cache: "no-store" });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch events: ${response.status}`);
+  }
+  
   const { events } = await response.json();
 
   return (
